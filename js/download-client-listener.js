@@ -91,7 +91,6 @@
             }
             this.nodeList[i].href = href;
         }
-        console.log(href);
         return downloadToken + '';
     };
 
