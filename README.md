@@ -21,6 +21,10 @@ downloadClientListener.listen('.btn_export',{
     'attempts': 30, // 当无cookie时定时几秒后关闭等待信息，默认值为30次，1次/秒
     'tokenName': 'downloadToken', // cookie的属性名，默认值为downloadToken
     'message': '提示信息', // 等待下载时的提示信息，默认值为'文件生成中...若生成时间过长，可稍后回来查看'
+    'isDisabledFunc': function () {
+                return false;
+    }, // 什么情况下禁用插件，true-禁用; false-开启，默认为false
+    'param': null, // 添加额外的请求参数对象，比如：{'name': 'wxj', 'age': 18}
     'callback': function(obj) {  // 文件下载完成时的回调函数
         console.log(obj);
     }

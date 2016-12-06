@@ -25,6 +25,10 @@
             'attempts': 30, // 当无cookie时定时几秒后关闭等待信息
             'tokenName': 'downloadToken', // cookie的属性名
             'message': '文件生成中...若生成时间过长，可稍后回来查看', // 等待下载时的提示信息
+            'isDisabledFunc': function () {
+                return false;
+            }, // 什么情况下禁用插件，true-禁用; false-开启，默认为false
+            'param': null, // 添加额外的请求参数对象，比如：{'name': 'wxj', 'age': 18}
             'callback': null // 文件下载完成时的回调函数
         };
         // 没有参数传入，直接返回默认参数
@@ -107,6 +111,29 @@
         this.callback();
     };
 
+    Client.prototype.isDisabledFunc = function () {
+        if (typeof this.options.isDisabledFunc === 'function') {
+            return this.options.isDisabledFunc(this);
+        }
+    };
+
+    Client.prototype.param = function () {
+        var param = this.options['param'];
+        if (param !== null && typeof param === 'object') {
+            for (var i = 0; i < this.nodeList.length; ++i) {
+                var href = this.nodeList[i].href;
+                if (href) {
+                    for (var name in param) {
+                        if (param.hasOwnProperty(name)) {
+                            href = this.updateQueryStringParameter(href, name, param[name]);
+                        }
+                    }
+                }
+                this.nodeList[i].href = href;
+            }
+        }
+    };
+
     var api = {
         /**
          * 启动监听器
@@ -116,6 +143,8 @@
          *  'attempts': int(当无cookie时定时几秒后关闭等待信息),
             'tokenName': string(cookie的属性名),
             'message': string(等待下载时的提示信息),
+            'isDisabledFunc': function(什么情况下禁用插件，true-禁用; false-开启，默认为false),
+            'param': object(添加额外的请求参数对象，比如：{'name': 'wxj', 'age': 18}),
             'callback': function(文件下载完成时的回调函数)
             }
          * @returns {api}
@@ -123,25 +152,37 @@
         listen: function (ele, opt) {
             var that = this;
             var client = new Client(ele, opt);
+
             var options = client.options;
             // 初始化一个cookie
             document.cookie = options.tokenName + '=0; path=/;';
 
-            for (var i = 0; i < client.nodeList.length; ++i) {
-                client.nodeList[i].addEventListener('click', function (event) {
-                    var downloadToken = client.setFormToken(options.tokenName);
-                    client.setMask(true);
+            var clientFunction = function () {
+                client.param();
+                var downloadToken = client.setFormToken(options.tokenName);
+                client.setMask(true);
 
-                    var downloadTimer = window.setInterval(function () {
-                        var token = client.getCookie(options.tokenName);
+                var downloadTimer = window.setInterval(function () {
+                    var token = client.getCookie(options.tokenName);
 
-                        if ((token === downloadToken) || (!token && options.attempts === 0)) {
-                            client.unblockSubmit(downloadTimer, options.tokenName);
-                        }
+                    if ((token === downloadToken) || (!token && options.attempts === 0)) {
+                        client.unblockSubmit(downloadTimer, options.tokenName);
+                    }
 
-                        options.attempts--;
-                    }, 1000);
-                });
+                    options.attempts--;
+                }, 1000);
+            };
+
+            if (client.isDisabledFunc()) {
+                for (var i = 0; i < client.nodeList.length; ++i) {
+                    client.nodeList[i].onclick = function () {
+                        return false;
+                    };
+                }
+            } else {
+                for (var i = 0; i < client.nodeList.length; ++i) {
+                    client.nodeList[i].onclick = clientFunction;
+                }
             }
             return that;
         }
