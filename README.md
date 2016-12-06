@@ -14,10 +14,10 @@
 
 ## 示例
 
-js 代码：
+1）js 代码：
 
 ```javascript
-downloadClientListener.listen('btn_export',{
+downloadClientListener.listen('.btn_export',{
     'attempts': 30, // 当无cookie时定时几秒后关闭等待信息，默认值为30次，1次/秒
     'tokenName': 'downloadToken', // cookie的属性名，默认值为downloadToken
     'message': '提示信息', // 等待下载时的提示信息，默认值为'文件生成中...若生成时间过长，可稍后回来查看'
@@ -27,7 +27,9 @@ downloadClientListener.listen('btn_export',{
 });
 ```
 
-服务器端设置 cookie，比如 java 代码：
+注意：**选择器传入的是`class` 字符串，比如 `.className`**。
+
+2）服务器端设置 cookie，比如 java 代码：
 
 ```java
 Cookie cookie = new Cookie(downloadTokenName, downloadTokenValue);

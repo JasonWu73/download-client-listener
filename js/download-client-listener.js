@@ -20,7 +20,7 @@
 
     var Client = function (ele, opt) {
         this.options = {};
-        this.element = ele;
+        this.nodeList = document.querySelectorAll(ele);
         this.defaluts = {
             'attempts': 30, // 当无cookie时定时几秒后关闭等待信息
             'tokenName': 'downloadToken', // cookie的属性名
@@ -81,14 +81,17 @@
         }
     };
 
-    Client.prototype.setFormToken = function (ele, tokenName) {
+    Client.prototype.setFormToken = function (tokenName) {
         var downloadToken = new Date().getTime();
-        var href = document.getElementById(ele).href;
-        if (href) {
-            href = this.updateQueryStringParameter(href, 'downloadTokenName', tokenName);
-            href = this.updateQueryStringParameter(href, 'downloadTokenValue', downloadToken);
+        for (var i = 0; i < this.nodeList.length; ++i) {
+            var href = this.nodeList[i].href;
+            if (href) {
+                href = this.updateQueryStringParameter(href, 'downloadTokenName', tokenName);
+                href = this.updateQueryStringParameter(href, 'downloadTokenValue', downloadToken);
+            }
+            this.nodeList[i].href = href;
         }
-        document.getElementById(ele).href = href;
+        console.log(href);
         return downloadToken + '';
     };
 
@@ -106,6 +109,18 @@
     };
 
     var api = {
+        /**
+         * 启动监听器
+         * @param ele class字符串，比如".className"
+         * @param opt 配置项
+         * {
+         *  'attempts': int(当无cookie时定时几秒后关闭等待信息),
+            'tokenName': string(cookie的属性名),
+            'message': string(等待下载时的提示信息),
+            'callback': function(文件下载完成时的回调函数)
+            }
+         * @returns {api}
+         */
         listen: function (ele, opt) {
             var that = this;
             var client = new Client(ele, opt);
@@ -113,28 +128,26 @@
             // 初始化一个cookie
             document.cookie = options.tokenName + '=0; path=/;';
 
-            document.getElementById(ele).onclick = function () {
-                var downloadToken = client.setFormToken(ele, options.tokenName);
-                client.setMask(true);
+            for (var i = 0; i < client.nodeList.length; ++i) {
+                client.nodeList[i].addEventListener('click', function (event) {
+                    var downloadToken = client.setFormToken(options.tokenName);
+                    client.setMask(true);
 
-                var downloadTimer = window.setInterval(function () {
-                    var token = client.getCookie(options.tokenName);
+                    var downloadTimer = window.setInterval(function () {
+                        var token = client.getCookie(options.tokenName);
 
-                    if ((token === downloadToken) || (!token && options.attempts === 0)) {
-                        client.unblockSubmit(downloadTimer, options.tokenName);
-                    }
+                        if ((token === downloadToken) || (!token && options.attempts === 0)) {
+                            client.unblockSubmit(downloadTimer, options.tokenName);
+                        }
 
-                    options.attempts--;
-                }, 1000);
-            };
+                        options.attempts--;
+                    }, 1000);
+                });
+            }
             return that;
         }
 
     };
 
-    /**
-     * 监听浏览器下载事件的插件
-     * @type {{listen: listen}}
-     */
     this.downloadClientListener = api;
 })(window, document);
