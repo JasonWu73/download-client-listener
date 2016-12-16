@@ -71,7 +71,7 @@
 
             document.body.insertBefore(newDivNode, document.body.firstChild);
         } else if (document.getElementById('down-loading')) {
-            document.getElementById('down-loading').remove();
+            document.getElementById('down-loading').parentNode.removeChild(document.getElementById('down-loading'));
         }
     };
 
